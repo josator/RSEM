@@ -46,6 +46,8 @@
 
 #include "WriteResults.h"
 
+#include "PacbioFlScores.h"
+
 using namespace std;
 
 bool verbose = true;
@@ -72,6 +74,7 @@ bool genGibbsOut; // generate file for Gibbs sampler
 
 char refName[STRLEN], outName[STRLEN];
 char imdName[STRLEN], statName[STRLEN];
+char pacbio_fl_score_path[STRLEN];
 char refF[STRLEN], cntF[STRLEN], tiF[STRLEN];
 char mparamsF[STRLEN];
 char modelF[STRLEN], thetaF[STRLEN];
@@ -86,6 +89,7 @@ double *probv, **countvs;
 
 Refs refs;
 Transcripts transcripts;
+PacbioFlScores pacbioFlScores;
 
 ModelParams mparams;
 
@@ -93,6 +97,7 @@ bool hasSeed;
 seedType seed;
 
 bool appendNames;
+bool usePacbioFlScore;
 
 template<class ReadType, class HitType, class ModelType>
 void init(ReadReader<ReadType> **&readers, HitContainer<HitType> **&hitvs, double **&ncpvs, ModelType **&mhps) {
@@ -554,6 +559,7 @@ int main(int argc, char* argv[]) {
 		printf("  --sampling: sample each read from its posterior distribution when BAM file is generated. (default: off)\n");
 		printf("  --seed uint32: the seed used for the BAM sampling. (default: off)\n");
 		printf("  --append-names: append transcript_name/gene_name when available. (default: off)\n");
+		printf("  --pacbio-fl-score-path: Use file with PACBIO full-length score information. (default: off)\n");
 		printf("// model parameters should be in imdName.mparams.\n");
 		exit(-1);
 	}
@@ -574,7 +580,8 @@ int main(int argc, char* argv[]) {
 	aux = NULL;
 	hasSeed = false;
 	appendNames = false;
-	
+	usePacbioFlScore = false;
+
 	for (int i = 6; i < argc; i++) {
 		if (!strcmp(argv[i], "-p")) { nThreads = atoi(argv[i + 1]); }
 		if (!strcmp(argv[i], "-b")) {
@@ -592,6 +599,10 @@ int main(int argc, char* argv[]) {
 		  for (int k = 0; k < len; k++) seed = seed * 10 + (argv[i + 1][k] - '0');
 		}
 		if (!strcmp(argv[i], "--append-names")) appendNames = true;
+		if (!strcmp(argv[i], "--pacbio-fl-score-path")) {
+            usePacbioFlScore = true;
+	        strcpy(pacbio_fl_score_path, argv[i + 1]);
+        }
 	}
 
 	general_assert(nThreads > 0, "Number of threads should be bigger than 0!");
@@ -601,10 +612,10 @@ int main(int argc, char* argv[]) {
 	refs.loadRefs(refF);
 	M = refs.getM();
 
-	sprintf(tiF, "%s.ti", refName);
+    sprintf(tiF, "%s.ti", refName);
 	transcripts.readFrom(tiF);
 
-	sprintf(cntF, "%s.cnt", statName);
+    sprintf(cntF, "%s.cnt", statName);
 	fin.open(cntF);
 
 	general_assert(fin.is_open(), "Cannot open " + cstrtos(cntF) + "! It may not exist.");
@@ -616,7 +627,15 @@ int main(int argc, char* argv[]) {
 
 	if ((READ_INT_TYPE)nThreads > N1) nThreads = N1;
 
-	//set model parameters
+    pacbioFlScores.loadScores(pacbio_fl_score_path);
+
+    //cout << refs.getRef(1).getName() << endl;
+    //cout << transcripts.getTranscriptAt(4).getTranscriptID() << endl;
+    //cout << pacbioFlScores.getScore(transcripts.getTranscriptAt(1).getTranscriptID()) << endl;
+    //cout << pacbioFlScores.getScore(transcripts.getTranscriptAt(4).getTranscriptID()) << endl;
+    //exit(0);
+
+    //set model parameters
 	mparams.M = M;
 	mparams.N[0] = N0; mparams.N[1] = N1; mparams.N[2] = N2;
 	mparams.refs = &refs;
@@ -636,11 +655,11 @@ int main(int argc, char* argv[]) {
 
 	//run EM
 	switch(read_type) {
-	case 0 : EM<SingleRead, SingleHit, SingleModel>(); break;
-	case 1 : EM<SingleReadQ, SingleHit, SingleQModel>(); break;
-	case 2 : EM<PairedEndRead, PairedEndHit, PairedEndModel>(); break;
-	case 3 : EM<PairedEndReadQ, PairedEndHit, PairedEndQModel>(); break;
-	default : fprintf(stderr, "Unknown Read Type!\n"); exit(-1);
+	    case 0 : EM<SingleRead, SingleHit, SingleModel>(); break;
+	    case 1 : EM<SingleReadQ, SingleHit, SingleQModel>(); break;
+	    case 2 : EM<PairedEndRead, PairedEndHit, PairedEndModel>(); break;
+	    case 3 : EM<PairedEndReadQ, PairedEndHit, PairedEndQModel>(); break;
+	    default : fprintf(stderr, "Unknown Read Type!\n"); exit(-1);
 	}
 
 	time_t b = time(NULL);
@@ -649,3 +668,4 @@ int main(int argc, char* argv[]) {
 
 	return 0;
 }
+

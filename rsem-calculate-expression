@@ -120,12 +120,13 @@ my $cap_stacked_chipseq_reads = 0; ## for multiple targets, remove redundant
                                    ## reads aligned to the same position
 my $n_max_stacked_chipseq_reads = 5; ## as above
 
+my $pacbio_fl_score_path  = '';
 
 GetOptions("keep-intermediate-files" => \$keep_intermediate_files,
 	   "temporary-folder=s" => \$temp_dir,
 	   "no-qualities" => \$no_qual,
 	   "paired-end" => \$paired_end,
-     "strandedness=s" => \$strandedness,
+       "strandedness=s" => \$strandedness,
 	   "alignments" => \$is_alignment,
 	   "fai=s" => \$faiF,
 	   "tag=s" => \$tagName,
@@ -177,22 +178,23 @@ GetOptions("keep-intermediate-files" => \$keep_intermediate_files,
 	                                      ## delimited by comma if more than one
 	   'chipseq-control-read-files=s' => \$chipseq_control_read_files, 
 	                                      ## delimited by comma if more than one
-     'chipseq-read-files-multi-targets=s' => \$chipseq_read_files_multi_targets,
+       'chipseq-read-files-multi-targets=s' => \$chipseq_read_files_multi_targets,
                                           ## delimited by comma
-     'chipseq-bed-files-multi-targets=s' => \$chipseq_bed_files_multi_targets,
+       'chipseq-bed-files-multi-targets=s' => \$chipseq_bed_files_multi_targets,
                                          ## delimited by comma
-     'cap-stacked-chipseq-reads' => \$cap_stacked_chipseq_reads,
-     'n-max-stacked-chipseq-reads=i' => \$n_max_stacked_chipseq_reads,
+       'cap-stacked-chipseq-reads' => \$cap_stacked_chipseq_reads,
+       'n-max-stacked-chipseq-reads=i' => \$n_max_stacked_chipseq_reads,
 	   'chipseq-peak-file=s' => \$chipseq_peak_file,
 	   'partition-model=s' => \$partition_model,
 	   "time" => \$mTime,
+       "pacbio-fl-score-path=s" => \$pacbio_fl_score_path,
 
-     # deprecated
-     "strand-specific" => \$strand_specific,
-     "forward-prob=f" => \$probF,
-     "sam|bam" => \$is_alignment,
+       # deprecated
+       "strand-specific" => \$strand_specific,
+       "forward-prob=f" => \$probF,
+       "sam|bam" => \$is_alignment,
 
-     # help
+       # help
 	   "version" => \$version,
 	   "q|quiet" => \$quiet,
 	   "h|help" => \$help) or pod2usage(-exitval => 2, -verbose => 2);
@@ -417,25 +419,11 @@ if (!$is_alignment) {
 	               " --outFileNamePrefix $imdName ";
 	               ##
 	
-#<<<<<<< HEAD
-	 #if ( $gzipped_read_file ) {
-	 #  $command .= ' --readFilesCommand zcat ';
-	 #} elsif ( $bzipped_read_file ) {
-	 #  $command .= ' --readFilesCommand bzcat ';
-	 #}
-	
-	 #if ( $read_type == 0 || $read_type == 1 ) {
-	 #  $command .= " --readFilesIn $mate1_list ";
-	 #} else {
-	 #  $command .= " --readFilesIn $mate1_list $mate2_list";
-	 #}
-#=======
 	    if ( $star_gzipped_read_file ) {
 		$command .= ' --readFilesCommand zcat ';
 	    } elsif ( $star_bzipped_read_file ) {
 		$command .= ' --readFilesCommand bzip2 -c ';
 	    }
-#>>>>>>> master
 	
 	    if ( $read_type == 0 || $read_type == 1 ) {
 		$command .= " --readFilesIn $mate1_list ";
@@ -579,7 +567,12 @@ if ($seed ne "NULL") {
     }
 }
 
-$command = "rsem-run-em $refName $read_type $sampleName $imdName $statName -p $nThreads";
+if ($pacbio_fl_score_path ne '') {
+    $command = "rsem-run-em $refName $read_type $sampleName $imdName $statName -p $nThreads --pacbio-fl-score-path $pacbio_fl_score_path";
+} else {
+    $command = "rsem-run-em $refName $read_type $sampleName $imdName $statName -p $nThreads";
+}
+
 if ($genBamF) { 
     $command .= " -b $inpF";
     if ($faiF ne "") { $command .= " 1 $faiF"; }
