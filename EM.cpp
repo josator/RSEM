@@ -336,32 +336,36 @@ void EM() {
 	pthread_attr_t attr;
 	int rc;
 
-	//initialize boolean variables
-	updateModel = calcExpectedWeights = false;
+    //initialize boolean variables
+    updateModel = calcExpectedWeights = false;
 
-	theta.clear();
-	theta.resize(M + 1, 0.0);
-	init<ReadType, HitType, ModelType>(readers, hitvs, ncpvs, mhps);
+    theta.clear();
+    theta.resize(M + 1, 0.0);
+    init<ReadType, HitType, ModelType>(readers, hitvs, ncpvs, mhps);
 
-	//set initial parameters
-	assert(N_tot > N2);
-	theta[0] = max(N0 * 1.0 / (N_tot - N2), 1e-8);
-	double val = (1.0 - theta[0]) / M;
+    //set initial parameters
+    assert(N_tot > N2);
+    theta[0] = max(N0 * 1.0 / (N_tot - N2), 1e-8);
+    double val = (1.0 - theta[0]) / M;
     double total_score = 0.0;
-	for (int i = 1; i <= M; i++) {
-        double fl_score;
-        fl_score = pacbioFlScores.getScore(transcripts.getTranscriptAt(i).getTranscriptID());
-        if (fl_score == -1) {
-            theta[i] = val;
-        } else {
-            theta[i] = val + fl_score;
+    if (usePacbioFlScore) {
+        for (int i = 1; i <= M; i++) {
+            double fl_score;
+            fl_score = pacbioFlScores.getScore(transcripts.getTranscriptAt(i).getTranscriptID());
+            if (fl_score == -1) {
+                theta[i] = val;
+            } else {
+                theta[i] = val + fl_score;
+            }
+            total_score += theta[i];
         }
-        total_score += theta[i];
-    }
 
-    for (int i = 1; i <= M; i++) {
-        theta[i] /= total_score;
-        //cout << transcripts.getTranscriptAt(i).getTranscriptID() << ' ' << pacbioFlScores.getScore(transcripts.getTranscriptAt(i).getTranscriptID()) << ' ' << theta[i] << endl;
+        for (int i = 1; i <= M; i++) {
+            theta[i] /= total_score;
+            //cout << transcripts.getTranscriptAt(i).getTranscriptID() << ' ' << pacbioFlScores.getScore(transcripts.getTranscriptAt(i).getTranscriptID()) << ' ' << theta[i] << endl;
+        }
+    } else {
+        for (int i = 1; i <= M; i++) theta[i] = val;
     }
 
     model.estimateFromReads(imdName);
