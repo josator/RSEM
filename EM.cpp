@@ -336,7 +336,6 @@ void EM() {
 	pthread_attr_t attr;
 	int rc;
 
-
 	//initialize boolean variables
 	updateModel = calcExpectedWeights = false;
 
@@ -348,9 +347,24 @@ void EM() {
 	assert(N_tot > N2);
 	theta[0] = max(N0 * 1.0 / (N_tot - N2), 1e-8);
 	double val = (1.0 - theta[0]) / M;
-	for (int i = 1; i <= M; i++) theta[i] = val;
+    double total_score = 0.0;
+	for (int i = 1; i <= M; i++) {
+        double fl_score;
+        fl_score = pacbioFlScores.getScore(transcripts.getTranscriptAt(i).getTranscriptID());
+        if (fl_score == -1) {
+            theta[i] = val;
+        } else {
+            theta[i] = val + fl_score;
+        }
+        total_score += theta[i];
+    }
 
-	model.estimateFromReads(imdName);
+    for (int i = 1; i <= M; i++) {
+        theta[i] /= total_score;
+        //cout << transcripts.getTranscriptAt(i).getTranscriptID() << ' ' << pacbioFlScores.getScore(transcripts.getTranscriptAt(i).getTranscriptID()) << ' ' << theta[i] << endl;
+    }
+
+    model.estimateFromReads(imdName);
 
 	for (int i = 0; i < nThreads; i++) {
 		fparams[i].model = (void*)(&model);
@@ -417,7 +431,7 @@ void EM() {
 				if (bChange < change) bChange = change;
 			}
 
-		if (verbose) { cout<< "ROUND = "<< ROUND<< ", SUM = "<< setprecision(15)<< sum<< ", bChange = " << setprecision(6)<< bChange<< ", totNum = " << totNum<< endl; }
+		//if (verbose) { cout<< "ROUND = "<< ROUND<< ", SUM = "<< setprecision(15)<< sum<< ", bChange = " << setprecision(6)<< bChange<< ", totNum = " << totNum<< endl; }
 	} while (ROUND < MIN_ROUND || (totNum > 0 && ROUND < MAX_ROUND));
 //	} while (ROUND < 1);
 
@@ -603,7 +617,7 @@ int main(int argc, char* argv[]) {
             usePacbioFlScore = true;
 	        strcpy(pacbio_fl_score_path, argv[i + 1]);
         }
-	}
+    }
 
 	general_assert(nThreads > 0, "Number of threads should be bigger than 0!");
 
