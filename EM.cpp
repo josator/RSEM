@@ -347,7 +347,9 @@ void EM() {
     assert(N_tot > N2);
     theta[0] = max(N0 * 1.0 / (N_tot - N2), 1e-8);
     double val = (1.0 - theta[0]) / M;
-    double total_score = 0.0;
+
+    double N1_adjust =  N1 * 1.0 / (N_tot - N2);
+    double total_score = theta[0];
     if (usePacbioFlScore) {
         for (int i = 1; i <= M; i++) {
             double fl_score;
@@ -355,14 +357,13 @@ void EM() {
             if (fl_score == -1) {
                 theta[i] = val;
             } else {
-                theta[i] = val + fl_score;
+                theta[i] = val + 2 * fl_score * N1_adjust;
             }
             total_score += theta[i];
         }
 
-        for (int i = 1; i <= M; i++) {
+        for (int i = 0; i <= M; i++) {
             theta[i] /= total_score;
-            //cout << transcripts.getTranscriptAt(i).getTranscriptID() << ' ' << pacbioFlScores.getScore(transcripts.getTranscriptAt(i).getTranscriptID()) << ' ' << theta[i] << endl;
         }
     } else {
         for (int i = 1; i <= M; i++) theta[i] = val;
@@ -419,8 +420,31 @@ void EM() {
 		for (int i = 0; i <= M; i++) sum += countvs[0][i];
 		assert(sum >= EPSILON);
 		for (int i = 0; i <= M; i++) theta[i] = countvs[0][i] / sum;
+        
+        //for (int i = 1; i <= M; i++) { cout << theta[i] << ' '; }
+        //cout << endl;
 
-		if (updateModel) {
+        if (usePacbioFlScore) {
+            double total_score2 = theta[0];
+            for (int i = 1; i <= M; i++) {
+                double fl_score;
+                fl_score = pacbioFlScores.getScore(transcripts.getTranscriptAt(i).getTranscriptID());
+                if (fl_score != -1) {
+                    theta[i] += fl_score * (2 /  ROUND) * N1_adjust;
+                } 
+                total_score2 += theta[i];
+            }
+
+            for (int i = 0; i <= M; i++) {
+                theta[i] /= total_score2;
+            }
+        }
+
+        //for (int i = 1; i <= M; i++) { cout << theta[i] << ' '; }
+        //cout << endl;
+        //cout << endl;
+		
+        if (updateModel) {
 			model.init();
 			for (int i = 0; i < nThreads; i++) { model.collect(*mhps[i]); }
 			model.finish();
