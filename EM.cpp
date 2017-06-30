@@ -349,7 +349,8 @@ void EM() {
     double val = (1.0 - theta[0]) / M;
 
     double N1_adjust =  N1 * 1.0 / (N_tot - N2);
-    double total_score = theta[0];
+    double total_score = 0;
+
     if (usePacbioFlScore) {
         for (int i = 1; i <= M; i++) {
             double fl_score;
@@ -362,8 +363,8 @@ void EM() {
             total_score += theta[i];
         }
 
-        for (int i = 0; i <= M; i++) {
-            theta[i] /= total_score;
+        for (int i = 1; i <= M; i++) {
+            theta[i] = (theta[i] / total_score) * N1_adjust;
         }
     } else {
         for (int i = 1; i <= M; i++) theta[i] = val;
@@ -421,11 +422,11 @@ void EM() {
 		assert(sum >= EPSILON);
 		for (int i = 0; i <= M; i++) theta[i] = countvs[0][i] / sum;
         
-        //for (int i = 1; i <= M; i++) { cout << theta[i] << ' '; }
-        //cout << endl;
+        for (int i = 1; i <= M; i++) { cout << theta[i] << ' '; }
+        cout << endl;
 
         if (usePacbioFlScore) {
-            double total_score2 = theta[0];
+            double total_score2 = 0;
             for (int i = 1; i <= M; i++) {
                 double fl_score;
                 fl_score = pacbioFlScores.getScore(transcripts.getTranscriptAt(i).getTranscriptID());
@@ -435,14 +436,14 @@ void EM() {
                 total_score2 += theta[i];
             }
 
-            for (int i = 0; i <= M; i++) {
-                theta[i] /= total_score2;
+            for (int i = 1; i <= M; i++) {
+                theta[i] = (theta[i] / total_score2) * N1_adjust;
             }
         }
 
-        //for (int i = 1; i <= M; i++) { cout << theta[i] << ' '; }
-        //cout << endl;
-        //cout << endl;
+        for (int i = 1; i <= M; i++) { cout << theta[i] << ' '; }
+        cout << endl;
+        cout << endl;
 		
         if (updateModel) {
 			model.init();
