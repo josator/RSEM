@@ -422,8 +422,8 @@ void EM() {
 		assert(sum >= EPSILON);
 		for (int i = 0; i <= M; i++) theta[i] = countvs[0][i] / sum;
         
-        for (int i = 1; i <= M; i++) { cout << theta[i] << ' '; }
-        cout << endl;
+        //for (int i = 1; i <= M; i++) { cout << theta[i] << ' '; }
+        //cout << endl;
 
         if (usePacbioFlScore) {
             double total_score2 = 0;
@@ -441,9 +441,9 @@ void EM() {
             }
         }
 
-        for (int i = 1; i <= M; i++) { cout << theta[i] << ' '; }
-        cout << endl;
-        cout << endl;
+        //for (int i = 1; i <= M; i++) { cout << theta[i] << ' '; }
+        //cout << endl;
+        //cout << endl;
 		
         if (updateModel) {
 			model.init();
