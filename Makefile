@@ -15,7 +15,7 @@ CXX = g++
 CXXFLAGS = -std=gnu++98 -Wall -I. -I$(BOOST) -I$(SAMTOOLS)/$(HTSLIB)
 CPPFLAGS =
 
-LDFLAGS =
+LDFLAGS = -L/home/jsalavert/dev/prefix/lib/ 
 LDLIBS =
 
 # Installation variables

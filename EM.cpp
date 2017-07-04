@@ -357,7 +357,7 @@ void EM() {
             if (fl_score == -1) {
                 theta[i] = val;
             } else {
-                theta[i] = val + 2 * fl_score * N1_adjust;
+                theta[i] = val + fl_score * N1_adjust;
             }
             total_score += theta[i];
         }
@@ -430,7 +430,7 @@ void EM() {
                 double fl_score;
                 fl_score = pacbioFlScores.getScore(transcripts.getTranscriptAt(i).getTranscriptID());
                 if (fl_score != -1) {
-                    theta[i] += fl_score * (2 /  ROUND) * N1_adjust;
+                    theta[i] += 0.25 * fl_score * N1_adjust;
                 } 
                 total_score2 += theta[i];
             }
