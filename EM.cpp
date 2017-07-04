@@ -97,7 +97,9 @@ bool hasSeed;
 seedType seed;
 
 bool appendNames;
+
 bool usePacbioFlScore;
+double pacbioPriorsStrength;
 
 template<class ReadType, class HitType, class ModelType>
 void init(ReadReader<ReadType> **&readers, HitContainer<HitType> **&hitvs, double **&ncpvs, ModelType **&mhps) {
@@ -431,7 +433,7 @@ void EM() {
                 double fl_score;
                 fl_score = pacbioFlScores.getScore(transcripts.getTranscriptAt(i).getTranscriptID());
                 if (fl_score != -1) {
-                    theta[i] += 0.25 * fl_score * N1_adjust;
+                    theta[i] += pacbioPriorsStrength * fl_score * N1_adjust;
                 } 
                 total_score2 += theta[i];
             }
@@ -624,6 +626,7 @@ int main(int argc, char* argv[]) {
 	hasSeed = false;
 	appendNames = false;
 	usePacbioFlScore = false;
+    pacbioPriorsStrength = 0.25;
 
 	for (int i = 6; i < argc; i++) {
 		if (!strcmp(argv[i], "-p")) { nThreads = atoi(argv[i + 1]); }
@@ -645,6 +648,9 @@ int main(int argc, char* argv[]) {
 		if (!strcmp(argv[i], "--pacbio-fl-score-path")) {
             usePacbioFlScore = true;
 	        strcpy(pacbio_fl_score_path, argv[i + 1]);
+        }
+		if (!strcmp(argv[i], "--pacbio-priors-strength")) {
+            pacbioPriorsStrength = atof(argv[i + 1]);
         }
     }
 
@@ -670,7 +676,8 @@ int main(int argc, char* argv[]) {
 
 	if ((READ_INT_TYPE)nThreads > N1) nThreads = N1;
 
-    pacbioFlScores.loadScores(pacbio_fl_score_path);
+    if(usePacbioFlScore)
+        pacbioFlScores.loadScores(pacbio_fl_score_path);
 
     //cout << refs.getRef(1).getName() << endl;
     //cout << transcripts.getTranscriptAt(4).getTranscriptID() << endl;

@@ -121,6 +121,7 @@ my $cap_stacked_chipseq_reads = 0; ## for multiple targets, remove redundant
 my $n_max_stacked_chipseq_reads = 5; ## as above
 
 my $pacbio_fl_score_path  = '';
+my $pacbio_priors_strength = 0.25;
 
 GetOptions("keep-intermediate-files" => \$keep_intermediate_files,
 	   "temporary-folder=s" => \$temp_dir,
@@ -188,6 +189,7 @@ GetOptions("keep-intermediate-files" => \$keep_intermediate_files,
 	   'partition-model=s' => \$partition_model,
 	   "time" => \$mTime,
        "pacbio-fl-score-path=s" => \$pacbio_fl_score_path,
+       "pacbio-priors-strength=f" => \$pacbio_priors_strength,
 
        # deprecated
        "strand-specific" => \$strand_specific,
@@ -228,6 +230,7 @@ pod2usage(-msg => "--sampling-for-bam cannot be specified if --no-bam-output is 
 pod2usage(-msg => "--output-genome-bam cannot be specified if --no-bam-output is specified!\n", -exitval => 2, -verbose => 2) if ($genGenomeBamF && !$genBamF);
 pod2usage(-msg => "The seed for random number generator must be a non-negative 32bit integer!\n", -exitval => 2, -verbose => 2) if (($seed ne "NULL") && ($seed < 0 || $seed > 0xffffffff));
 pod2usage(-msg => "The credibility level should be within (0, 1)!\n", -exitval => 2, -verbose => 2) if ($CONFIDENCE <= 0.0 || $CONFIDENCE >= 1.0);
+pod2usage(-msg => "The pacbio priors strength should be within (0, 1)!\n", -exitval => 2, -verbose => 2) if ($pacbio_priors_strength <= 0.0 || $pacbio_priors_strength >= 1.0);
 pod2usage(-msg => "Gzipped read files can only be used for aligner STAR\n", -exitval=>2, -verbose =>2) if ( ( $star == 0 ) && ( $star_gzipped_read_file != 0));
 pod2usage(-msg => "Bzipped read files can only be used for aligner STAR\n", -exitval=>2, -verbose =>2) if ( ( $star == 0 ) && ( $star_bzipped_read_file != 0));
 
@@ -568,7 +571,7 @@ if ($seed ne "NULL") {
 }
 
 if ($pacbio_fl_score_path ne '') {
-    $command = "rsem-run-em $refName $read_type $sampleName $imdName $statName -p $nThreads --pacbio-fl-score-path $pacbio_fl_score_path";
+    $command = "rsem-run-em $refName $read_type $sampleName $imdName $statName -p $nThreads --pacbio-fl-score-path $pacbio_fl_score_path --pacbio-priors-strength $pacbio_priors_strength";
 } else {
     $command = "rsem-run-em $refName $read_type $sampleName $imdName $statName -p $nThreads";
 }
